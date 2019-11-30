@@ -22,3 +22,8 @@ reduced_dataset <- kickstarter %>%
   select(goal, pledged, state, static_usd_rate, backers_count, launched_at_weekday) %>%
   mutate(goal = goal*static_usd_rate) %>%
   mutate(pledged = pledged*static_usd_rate)
+
+attach(reduced_dataset)
+launched_at_weekend <- launched_at_weekday == "Saturday" | launched_at_weekday == "Sunday"
+fit <- lm(log(pledged + 1)~log(goal + 1) + I(log(goal + 1)^2) + I(log(goal + 1)^3)+log(backers_count + 1)+launched_at_weekend)
+summary(fit)
