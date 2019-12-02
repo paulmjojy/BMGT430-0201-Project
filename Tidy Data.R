@@ -24,12 +24,7 @@ reduced_dataset <- kickstarter %>%
   mutate(goal = goal*static_usd_rate) %>%
   mutate(pledged = pledged*static_usd_rate) %>%
   select(goal, pledged, state, static_usd_rate, backers_count, launched_at_weekday)
-  
-<<<<<<< HEAD
-#Hi Anthony
 
-write.csv(reduced_dataset, "./reduced_dataset.csv", row.names = FALSE) #Create this and store on your local file system but don't commit this to github please.
-=======
 write.csv(reduced_dataset, "./reduced_dataset.csv", row.names = FALSE) #Create this and store on your local file system but don't commit this to github please.
 
 attach(reduced_dataset)
@@ -40,6 +35,3 @@ vif(fit) # OK
 fit2 <- lm(log(pledged + 1)~avglog_goal + I(avglog_goal^2) + I(avglog_goal^3)+avglog_backer+I(avglog_backer^2)+staff_pick+launch_to_deadline_days+create_to_launch_days)
 vif(fit2) # Also OK
 summary(fit)
-#ans
-
->>>>>>> 83298e4e89ea4e63fadc7ad18e8f08cb558796a7
