@@ -23,4 +23,6 @@ reduced_dataset <- kickstarter %>%
   mutate(pledged = pledged*static_usd_rate) %>%
   select(goal, pledged, state, static_usd_rate, backers_count, launched_at_weekday)
   
+#Hi Anthony
+
 write.csv(reduced_dataset, "./reduced_dataset.csv", row.names = FALSE) #Create this and store on your local file system but don't commit this to github please.
