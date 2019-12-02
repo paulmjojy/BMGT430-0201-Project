@@ -2,3 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
+kickstarter_data_with_features.csv
+reduced_dataset.csv
