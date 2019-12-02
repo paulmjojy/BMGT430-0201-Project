@@ -35,3 +35,5 @@ vif(fit) # OK
 fit2 <- lm(log(pledged + 1)~avglog_goal + I(avglog_goal^2) + I(avglog_goal^3)+avglog_backer+I(avglog_backer^2)+staff_pick+launch_to_deadline_days+create_to_launch_days)
 vif(fit2) # Also OK
 summary(fit)
+#ans
+
