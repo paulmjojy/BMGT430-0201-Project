@@ -69,10 +69,12 @@ attach(logistic_model_two)
 
 ##Jordans Section
 jordan_dataset <- kickstarter %>%
-  select(goal, pledged, state, static_usd_rate, backers_count, created_at_weekday, staff_pick, category, country, launch_to_deadline_days, create_to_launch_days) %>%
   mutate(goal = goal*static_usd_rate) %>%
   mutate(pledged = pledged*static_usd_rate) %>%
-  select(goal, pledged, state, static_usd_rate, backers_count, launched_at_weekday)
+  mutate(launch_to_deadline_days = as.integer(str_extract(kickstarter$launch_to_deadline, "([0-9]+)"))) %>%
+  mutate(create_to_launch_days = as.integer(str_extract(kickstarter$create_to_launch, "([0-9]+)"))) %>%
+  select(goal, pledged, state, backers_count, created_at_weekday, staff_pick, category, country, launch_to_deadline_days, create_to_launch_days)
+
 attach(jordan_dataset)
 
 avglog_goal = log(goal + 1) - mean(log(goal + 1))
