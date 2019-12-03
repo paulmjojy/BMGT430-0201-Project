@@ -56,7 +56,7 @@ mred<-glm(state~1, data=logistic_model, family = binomial())
 anova(mred,m,test = "Chisq")
 #P-value was small so model is significant
 #Transformation to fix equal spread and linearity assumptions
-m1<=glm(state~I(log(goal))+launched_at_weekday+duration,data=logistic_model,family = binomial())
+m1<-glm(state~I(log(goal))+launched_at_weekday+duration,data=logistic_model,family = binomial())
 summary(m1)
 
 detach(logistic_model)
