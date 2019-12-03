@@ -1,3 +1,9 @@
+#Install before you use them the first time
+#install.packages("stringr")
+#install.packages("dplyr")
+#install.packages("car")
+
+library(stringr)
 library(dplyr)
 library(car)
 
@@ -15,11 +21,26 @@ reduced_dataset <- kickstarter %>%
 
 #write.csv(reduced_dataset, "./reduced_dataset.csv", row.names = FALSE) #Create this and store on your local file system but don't commit this to github please.
 
+
+
 #Paul and Anthony Section
 
 
+
+
 ##Jordans Section
-attach(reduced_dataset)
+find_days <- "([0-9]+)"
+jordan_dataset <- kickstarter %>%
+  select(goal, pledged, state, static_usd_rate, backers_count, created_at_weekday, staff_pick, category, country, launch_to_deadline, create_to_launch) %>%
+  mutate(goal = goal*static_usd_rate) %>%
+  mutate(pledged = pledged*static_usd_rate) %>%
+  mutate(pledged = pledged*static_usd_rate) %>%
+  mutate(launch_to_deadline_days = str_subset(launch_to_deadline, find_days)) %>% #launch to deadline manip 
+  mutate(create_to_launch_days = str_subset(launch_to_deadline, find_days)) %>% #create to launch manip
+  select(goal, pledged, state, static_usd_rate, backers_count, created_at_weekday, launch_to_deadline_days, create_to_launch_days)
+
+
+attach(jordan_dataset)
 avglog_goal = log(goal + 1) - mean(log(goal + 1))
 avglog_backer = log(backers_count + 1) - mean(log(backers_count + 1))
 fit <- lm(log(pledged + 1)~avglog_goal + I(avglog_goal^2) + I(avglog_goal^3))
