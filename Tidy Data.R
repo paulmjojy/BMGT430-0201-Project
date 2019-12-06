@@ -18,7 +18,6 @@ kickstarter <- kickstarter %>%
   mutate(pledged = pledged*static_usd_rate)
 
 ##Jordans Section
-detach(logistic_model)
 reduced_model <- kickstarter %>%
   mutate(goal = goal*static_usd_rate) %>%
   mutate(pledged = pledged*static_usd_rate) %>%
@@ -26,7 +25,7 @@ reduced_model <- kickstarter %>%
   mutate(create_to_launch_days = as.integer(str_extract(kickstarter$create_to_launch, "([0-9]+)"))) %>%
   select(goal, pledged, state, backers_count, created_at_weekday, staff_pick, category, country, launch_to_deadline_days, create_to_launch_days)
 
-attach(jordan_dataset)
+attach(reduced_model)
 
 avglog_goal = log(goal + 1) - mean(log(goal + 1))
 avglog_backer = log(backers_count + 1) - mean(log(backers_count + 1))
