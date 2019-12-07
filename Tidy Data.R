@@ -12,26 +12,31 @@ library(olsrr)
 ###Tidying up the data and fit variables
 #The units for goal and pledged are in US dollars and properly converted based on the static_usd_rate column
 #Filtered out any goal amounts where the goal is 0
-kickstarter <- read.csv("./kickstarter_data_with_features.csv", header = TRUE) %>%
-  filter(goal, goal > 0) %>%
-  mutate(goal = goal*static_usd_rate) %>% 
-  mutate(pledged = pledged*static_usd_rate)
+kickstarter <- read.csv("./kickstarter_data_with_features.csv", header = TRUE) 
 
 #Whittle down the columns to the variables we're interested in
 #weekday <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
 #weekend <- c("Saturday", "Sunday")
 reduced_model <- kickstarter %>%
-  mutate(launch_to_deadline_days = as.integer(str_extract(kickstarter$launch_to_deadline, "([0-9]+)"))) %>%
-  mutate(create_to_launch_days = as.integer(str_extract(kickstarter$create_to_launch, "([0-9]+)"))) %>%
-  select(goal, pledged, state, backers_count, created_at_weekday, staff_pick, category, country, launch_to_deadline_days, create_to_launch_days)
+  mutate(goal = goal*static_usd_rate) %>% 
+  mutate(pledged = pledged*static_usd_rate) %>%
+  mutate(launch_to_deadline_days = as.integer(str_extract(launch_to_deadline, "([0-9]+)"))) %>%
+  mutate(create_to_launch_days = as.integer(str_extract(create_to_launch, "([0-9]+)"))) %>%
+  mutate(state = ordered(state, levels = c("failed", "canceled", "suspended", "live", "successful"))) %>%
+  select(pledged, goal, backers_count, launch_to_deadline_days, create_to_launch_days, staff_pick, state, created_at_weekday, category, country) %>%
+  filter(category != "") #After manipulating all the data we need to remove the rows where there is no category
+summary(reduced_model)
 attach(reduced_model)
 
 
 
-#Create a linear regression model based on this reduced model
-default_model <- lm(pledged~., data=reduced_model)
+
+
 
 ###Basic Analysis of Data, Check for Linearity
+
+#Create a linear regression model based on this reduced model
+default_model <- lm(pledged~., data=reduced_model)
 summary(default_model)
 #R^2 = 0.5981
 #Adjusted R^2 = 0.597
@@ -41,6 +46,9 @@ plot(default_model)
 #Normal QQ: Normality is violated, data needs to be transformed
 #Standardized Residuals vs. Fitted: Linearity and Equal Spread are violated
 #It's a mess
+
+vif(default_model)
+#Nothing wrong with the VIF, all of them hover around 1
 
 
 
@@ -67,7 +75,7 @@ ols_step_forward_p(default_model, details=TRUE)
 
 #Results from forwards elimination
 #It said our model would fit better if we fit backers_count, staff_pick, category, state, launch_to_deadline_days,
-#goal and created_at_weekday. I.e. remove create_to_launch_days, country and launch_to_deadline_days
+#goal and created_at_weekday. I.e. remove create_to_launch_days and country
 
 #Perform (dub)stepwise elimination
 ols_step_both_p(default_model, details=TRUE)
