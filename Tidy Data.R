@@ -22,7 +22,7 @@ reduced_model <- kickstarter %>%
   mutate(pledged = pledged*static_usd_rate) %>%
   mutate(launch_to_deadline_days = as.integer(str_extract(launch_to_deadline, "([0-9]+)"))) %>%
   mutate(create_to_launch_days = as.integer(str_extract(create_to_launch, "([0-9]+)"))) %>%
-  mutate(state = ordered(state, levels = c("failed", "canceled", "suspended", "live", "successful"))) %>%
+  mutate(state = factor(state, ordered = FALSE, labels = c("failed", "canceled", "suspended", "live", "successful"), levels = c("failed", "canceled", "suspended", "live", "successful"))) %>% #Made the state an ordered factor
   select(pledged, goal, backers_count, launch_to_deadline_days, create_to_launch_days, staff_pick, state, created_at_weekday, category, country) %>%
   filter(category != "") #After manipulating all the data we need to remove the rows where there is no category
 summary(reduced_model)
@@ -55,13 +55,27 @@ vif(default_model)
 
 
 ###Transform Data and remove outliers ???
+#Outliers
+cookes_distance <- cooks.distance(default_model)
+plot(cookes_distance)
+values_to_remove_cook <- cookes_distance > 1
+
+#Leverages
+leverages <- hatvalues(default_model)
+plot(leverages)
+threshold <- 6/nrow(reduced_model)
+values_to_remove_lev <- leverages > threshold 
+
+
+#trying to see if we can remove them using a boolean array
+test <- values_to_remove_cook & values_to_remove_lev
+summary(test)
+removed_outliers_model <- reduced_model[-(test)]
 
 
 
-
-
-
-
+  
+  
 ###Perform backwards, forwards and stepwise on the reduced model in order to achieve a more parsimonious model
 
 #Perform backwards elimination
