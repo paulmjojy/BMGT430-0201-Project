@@ -24,11 +24,10 @@ reduced_model <- kickstarter %>%
   mutate(create_to_launch_days = as.integer(str_extract(create_to_launch, "([0-9]+)"))) %>%
   mutate(state = factor(state, ordered = FALSE, labels = status, levels = status)) %>% #Made the state an ordered factor
   mutate(created_at_weekday = factor(created_at_weekday, ordered = FALSE, labels = weekday, levels = weekday)) %>%
-  select(pledged, goal, backers_count, launch_to_deadline_days, create_to_launch_days, staff_pick, state, created_at_weekday, category, country)
+  select(pledged, goal, backers_count, launch_to_deadline_days, create_to_launch_days, staff_pick, state, created_at_weekday, category, country) %>%
   filter(category != "") #After manipulating all the data we need to remove the rows where there is no category
 summary(reduced_model)
 attach(reduced_model)
-
 
 
 
@@ -42,6 +41,7 @@ summary(default_model)
 #R^2 = 0.5981
 #Adjusted R^2 = 0.597
 #P value overall is low but the a majority of the predictors are just... terrible
+
 plot(default_model)
 #Residuals vs Fitted: Linearity and Equal Spread are violated
 #Normal QQ: Normality is violated, data needs to be transformed
@@ -55,27 +55,32 @@ vif(default_model)
 
 
 
-###Transform Data and remove outliers ???
+###Transform Data and remove outliers
 #Outliers
 cookes_distance <- cooks.distance(default_model)
+values_to_remove_cook <- cookes_distance > (4/nrow(reduced_model)) #4/n is apparently a good metric to determine if we should remove or not...
+to_remove_cooke <- as.numeric(names(cookes_distance)[values_to_remove_cook])
 plot(cookes_distance)
-values_to_remove_cook <- cookes_distance > 1
 
 #Leverages
-leverages <- hatvalues(default_model)
-plot(leverages)
-threshold <- 6/nrow(reduced_model)
-values_to_remove_lev <- leverages > threshold 
+# Removed this section because leverage is incorporated into Cookes distance
+# leverages <- hatvalues(default_model)
+# plot(leverages)
+# threshold <- (3*ncol(reduced_model))/nrow(reduced_model) 
+# #i has a high leverage if its greater than 3(k+1)/n
+# #ncol(reduced_model) = k+1
+# values_to_remove_lev <- leverages > threshold 
+# to_remove_leverage <- as.numeric(names(leverages)[values_to_remove_lev])
+
+#Remove outliers
+removed_outliers_model <- reduced_model[-to_remove_cooke, ]
+model_without_outliers <- lm(pledged~., data=removed_outliers_model)
+plot(model_without_outliers)
+#Cookes distance doesn't determine whether a data point should be removed
+#but rather, just brings our attention to the point in question
 
 
-#trying to see if we can remove them using a boolean array
-test <- values_to_remove_cook & values_to_remove_lev
-summary(test)
-removed_outliers_model <- reduced_model[-(test)]
 
-
-
-  
   
 ###Perform backwards, forwards and stepwise on the reduced model in order to achieve a more parsimonious model
 
@@ -117,8 +122,29 @@ avglog_goal = log(goal + 1) - mean(log(goal + 1))
 avglog_backer = log(backers_count + 1) - mean(log(backers_count + 1))
 fit <- lm(log(pledged + 1)~avglog_goal + I(avglog_goal^2) + I(avglog_goal^3))
 vif(fit) # OK
-fit2 <- lm(log(pledged + 1)~avglog_goal + I(avglog_goal^2) + I(avglog_goal^3)+avglog_backer+I(avglog_backer^2)+staff_pick+launch_to_deadline_days+create_to_launch_days)
+fit2 <- lm(log(pledged + 1)~avglog_goal + I(avglog_goal^2) + I(avglog_goal^3)+avglog_backer+I(avglog_backer^2)+staff_pick+launch_to_deadline_days+create_to_launch_days, data=reduced_model)
 vif(fit2) # Also OK
 summary(fit)
+summary(fit2)
+plot(fit)
+plot(fit2)
 
+#clean up fit2
+#This process just indiscriminately removes any points that have a cookes distance
+#greater than 4/n. I don't know if you wanna examine it further but...
+cookes_distance_fit2 <- cooks.distance(fit2)
+values_to_remove_cook_fit2 <- cookes_distance_fit2 > (4/nrow(reduced_model)) #4/n is apparently a good metric to determine if we should remove or not...
+to_remove_cooke_fit2 <- as.numeric(names(cookes_distance_fit2)[values_to_remove_cook_fit2])
+plot(cookes_distance_fit2)
+fit2_no_outliers <- reduced_model[-to_remove_cooke_fit2,]
+
+#Remember to detach and reattach the new dataset because we took out some points
+#so there will be a discrepancy in rows
+detach(reduced_model)
+attach(fit2_no_outliers)
+avglog_goal = log(goal + 1) - mean(log(goal + 1))
+avglog_backer = log(backers_count + 1) - mean(log(backers_count + 1))
+fit3 <- lm(log(pledged + 1)~avglog_goal + I(avglog_goal^2) + I(avglog_goal^3)+avglog_backer+I(avglog_backer^2)+staff_pick+launch_to_deadline_days+create_to_launch_days, data=fit2_no_outliers)
+summary(fit3)
+plot(fit3)
 
