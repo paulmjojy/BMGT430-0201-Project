@@ -38,14 +38,15 @@ attach(reduced_model)
 #Create a linear regression model based on this reduced model
 default_model <- lm(pledged~., data=reduced_model)
 summary(default_model)
-#R^2 = 0.5981
-#Adjusted R^2 = 0.597
+#R^2 = 0.5875
+#Adjusted R^2 = 0.5862
 #P value overall is low but the a majority of the predictors are just... terrible
 
 plot(default_model)
 #Residuals vs Fitted: Linearity and Equal Spread are violated
 #Normal QQ: Normality is violated, data needs to be transformed
 #Standardized Residuals vs. Fitted: Linearity and Equal Spread are violated
+#A few outliers based on residuals vs leverage
 #It's a mess
 
 vif(default_model)
@@ -56,29 +57,34 @@ vif(default_model)
 
 
 ###Transform Data and remove outliers
+#Add Interaction Variables
+default_model <- lm(pledged~. + goal*staff_pick + goal*state + backers_count*created_at_weekday + backers_count*country, data=reduced_model)
+summary(default_model)
+
+#goal*staff_pick and goal*state seem to work well...
+#backers_count*created_at_weekday and backers_count*country works too...
+#category doesn't seem to fit with any of the other predictors...
+#Try to mix and match I guess...
+
+#Transform Data
+
+
+
 #Outliers
 cookes_distance <- cooks.distance(default_model)
 values_to_remove_cook <- cookes_distance > (4/nrow(reduced_model)) #4/n is apparently a good metric to determine if we should remove or not...
 to_remove_cooke <- as.numeric(names(cookes_distance)[values_to_remove_cook])
 plot(cookes_distance)
 
-#Leverages
-# Removed this section because leverage is incorporated into Cookes distance
-# leverages <- hatvalues(default_model)
-# plot(leverages)
-# threshold <- (3*ncol(reduced_model))/nrow(reduced_model) 
-# #i has a high leverage if its greater than 3(k+1)/n
-# #ncol(reduced_model) = k+1
-# values_to_remove_lev <- leverages > threshold 
-# to_remove_leverage <- as.numeric(names(leverages)[values_to_remove_lev])
-
-#Remove outliers
-removed_outliers_model <- reduced_model[-to_remove_cooke, ]
+removed_outliers_model <- reduced_model[-to_remove_cooke, ] #Remove the rows from the data
 model_without_outliers <- lm(pledged~., data=removed_outliers_model)
 plot(model_without_outliers)
 #Cookes distance doesn't determine whether a data point should be removed
 #but rather, just brings our attention to the point in question
-
+default_model <- lm(pledged~., data=model_without_outliers)
+summary(model_without_outliers)
+plot(model_without_outliers)
+vif(model_without_outliers)
 
 
   
@@ -105,9 +111,6 @@ ols_step_both_p(default_model, details=TRUE)
 #state, launch_to_deadline_days, and goal. I.e. remove created_at_weekday, country,
 #and create_to_launch_days
 
-
-
-
 ###Backwards Reduction Anaysis
 #This fits the whole model minus these two predictors
 backwards_model <- lm(pledged~. -create_to_launch_days -country, data=reduced_model)
@@ -116,18 +119,21 @@ backwards_model <- lm(pledged~. -create_to_launch_days -country, data=reduced_mo
 
 
 
+
 ###Jordan's analysis based on what he found doing things by hand
-#We need to find the outliers.
 avglog_goal = log(goal + 1) - mean(log(goal + 1))
 avglog_backer = log(backers_count + 1) - mean(log(backers_count + 1))
+#First fitted model using some higher power polynomial transformations
 fit <- lm(log(pledged + 1)~avglog_goal + I(avglog_goal^2) + I(avglog_goal^3))
 vif(fit) # OK
+summary(fit)
+plot(fit)
+
+#Add the rest of the family
 fit2 <- lm(log(pledged + 1)~avglog_goal + I(avglog_goal^2) + I(avglog_goal^3)+avglog_backer+I(avglog_backer^2)+staff_pick+launch_to_deadline_days+create_to_launch_days, data=reduced_model)
 vif(fit2) # Also OK
-summary(fit)
 summary(fit2)
-plot(fit)
-plot(fit2)
+plot(fit2) #Looks more normal, a few weird observations/trends
 
 #clean up fit2
 #This process just indiscriminately removes any points that have a cookes distance
@@ -142,6 +148,8 @@ fit2_no_outliers <- reduced_model[-to_remove_cooke_fit2,]
 #so there will be a discrepancy in rows
 detach(reduced_model)
 attach(fit2_no_outliers)
+
+#Recalculate because some data points are missing from the original model
 avglog_goal = log(goal + 1) - mean(log(goal + 1))
 avglog_backer = log(backers_count + 1) - mean(log(backers_count + 1))
 fit3 <- lm(log(pledged + 1)~avglog_goal + I(avglog_goal^2) + I(avglog_goal^3)+avglog_backer+I(avglog_backer^2)+staff_pick+launch_to_deadline_days+create_to_launch_days, data=fit2_no_outliers)
