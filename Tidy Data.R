@@ -15,15 +15,16 @@ library(olsrr)
 kickstarter <- read.csv("./kickstarter_data_with_features.csv", header = TRUE) 
 
 #Whittle down the columns to the variables we're interested in
-#weekday <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
-#weekend <- c("Saturday", "Sunday")
+weekday <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday") #Sunday is the baseline
+status <- c("failed", "canceled", "suspended", "live", "successful") #Failed is the baseline
 reduced_model <- kickstarter %>%
   mutate(goal = goal*static_usd_rate) %>% 
   mutate(pledged = pledged*static_usd_rate) %>%
   mutate(launch_to_deadline_days = as.integer(str_extract(launch_to_deadline, "([0-9]+)"))) %>%
   mutate(create_to_launch_days = as.integer(str_extract(create_to_launch, "([0-9]+)"))) %>%
-  mutate(state = factor(state, ordered = FALSE, labels = c("failed", "canceled", "suspended", "live", "successful"), levels = c("failed", "canceled", "suspended", "live", "successful"))) %>% #Made the state an ordered factor
-  select(pledged, goal, backers_count, launch_to_deadline_days, create_to_launch_days, staff_pick, state, created_at_weekday, category, country) %>%
+  mutate(state = factor(state, ordered = FALSE, labels = status, levels = status)) %>% #Made the state an ordered factor
+  mutate(created_at_weekday = factor(created_at_weekday, ordered = FALSE, labels = weekday, levels = weekday)) %>%
+  select(pledged, goal, backers_count, launch_to_deadline_days, create_to_launch_days, staff_pick, state, created_at_weekday, category, country)
   filter(category != "") #After manipulating all the data we need to remove the rows where there is no category
 summary(reduced_model)
 attach(reduced_model)
