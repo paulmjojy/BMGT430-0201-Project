@@ -60,6 +60,12 @@ m1<-glm(state~I(log(goal))+launched_at_weekday+duration,data=logistic_model,fami
 summary(m1)
 
 detach(logistic_model)
+
+
+
+
+
+
 ##Jordans Section
 jordan_dataset <- kickstarter %>%
   mutate(goal = goal*static_usd_rate) %>%
@@ -69,8 +75,6 @@ jordan_dataset <- kickstarter %>%
   select(goal, pledged, state, backers_count, created_at_weekday, staff_pick, category, country, launch_to_deadline_days, create_to_launch_days)
 
 attach(jordan_dataset)
-
-
 avglog_goal = log(goal + 1) - mean(log(goal + 1))
 avglog_backer = log(backers_count + 1) - mean(log(backers_count + 1))
 fit <- lm(log(pledged + 1)~avglog_goal + I(avglog_goal^2) + I(avglog_goal^3))
@@ -78,3 +82,4 @@ vif(fit) # OK
 fit2 <- lm(log(pledged + 1)~avglog_goal + I(avglog_goal^2) + I(avglog_goal^3)+avglog_backer+I(avglog_backer^2)+staff_pick+launch_to_deadline_days+create_to_launch_days)
 vif(fit2) # Also OK
 summary(fit)
+summary(fit2)
